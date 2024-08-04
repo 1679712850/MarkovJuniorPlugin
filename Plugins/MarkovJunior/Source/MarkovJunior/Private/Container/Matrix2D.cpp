@@ -144,9 +144,30 @@ int32 FMatrix2::GetIndex(int32 Row, int32 Column)
 	return Row * GetColumnNum() + Column;
 }
 
+void FMatrix2::ClampValue(int32 Max)
+{
+	for (int32 RowIndex = 0; RowIndex < GetRowNum(); ++RowIndex)
+	{
+		for (int32 ColumnIndex = 0; ColumnIndex < GetColumnNum(); ++ColumnIndex)
+		{
+			auto Value = Get(RowIndex,ColumnIndex);
+			if (Value > Max)
+			{
+				Set(RowIndex,ColumnIndex,-1);
+			}
+		}
+	}
+}
+
 
 void FInOutMatrix2::OnResize()
 {
 	InMatrix.SetSize(Size);
 	OutMatrix.SetSize(Size);
+}
+
+void FInOutMatrix2::ClampValue(int32 Max)
+{
+	InMatrix.ClampValue(Max);
+	OutMatrix.ClampValue(Max);
 }

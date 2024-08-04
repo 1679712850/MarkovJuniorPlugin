@@ -40,6 +40,7 @@ struct MARKOVJUNIOR_API FMatrix2
 	const int32 Get(int32 Row,int32 Column) const;
 	void Set(int32 Row,int32 Column,int32 Value);
 	int32 GetIndex(int32 Row,int32 Column);
+	void ClampValue(int32 Max);
 private:
 	void OnAddRows(int32 Num = 1);
 	void OnAddColumns(int32 Num = 1);
@@ -62,6 +63,8 @@ struct MARKOVJUNIOR_API FInOutMatrix2
 	FMatrix2 OutMatrix;
 
 	void OnResize();
+
+	void ClampValue(int32 Max);
 };
 
 

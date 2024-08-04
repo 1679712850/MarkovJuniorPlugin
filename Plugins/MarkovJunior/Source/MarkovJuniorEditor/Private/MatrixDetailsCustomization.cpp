@@ -14,7 +14,7 @@ FInOutMatrixDetailsCustomization::FInOutMatrixDetailsCustomization()
 	ValueOptions.Add(MakeShared<int32>(-1));
 
 	FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this,&FInOutMatrixDetailsCustomization::OnValuePropertyChanged);
-
+	
 	ValueNames.Add(TEXT("ceshi1"));
 	ValueNames.Add(TEXT("ceshi2"));
 	ValueNames.Add(TEXT("ceshi3"));
@@ -61,6 +61,7 @@ void FInOutMatrixDetailsCustomization::CustomizeHeader(TSharedRef<IPropertyHandl
 void FInOutMatrixDetailsCustomization::CustomizeChildren(TSharedRef<IPropertyHandle> PropertyHandle,
 	IDetailChildrenBuilder& ChildBuilder, IPropertyTypeCustomizationUtils& CustomizationUtils)
 {
+	
 	auto& InRow = ChildBuilder.AddCustomRow(FText::FromString(TEXT("InMatrix")));
 	
 	InMatrixGridPanel = SNew(SGridPanel);
@@ -94,6 +95,8 @@ void FInOutMatrixDetailsCustomization::CustomizeChildren(TSharedRef<IPropertyHan
 // todo : combine to one function
 void FInOutMatrixDetailsCustomization::GenerateInMatrixGridWidget()
 {
+	CheckMatrixPropertyValue();
+
 	InMatrixGridPanel->ClearChildren();
 	
 	UpdateValueOptions();
@@ -153,6 +156,7 @@ void FInOutMatrixDetailsCustomization::GenerateInMatrixGridWidget()
 
 void FInOutMatrixDetailsCustomization::GenerateOutMatrixGridWidget()
 {
+	CheckMatrixPropertyValue();
 	OutMatrixGridPanel->ClearChildren();
 	
 	UpdateValueOptions();
@@ -235,18 +239,17 @@ FInOutMatrix2* FInOutMatrixDetailsCustomization::GetInOutMatrix() const
 void FInOutMatrixDetailsCustomization::OnMatrixSizeChanged()
 {
 	InOutMatrix->OnResize();
-	UE_LOG(LogMarkovJuniorEditor,Warning,TEXT("NewSize:%d,%d"),InOutMatrix->Size.X,InOutMatrix->Size.Y)
 	GenerateInMatrixGridWidget();
 	GenerateOutMatrixGridWidget();
 }
 
 void FInOutMatrixDetailsCustomization::UpdateValueOptions()
 {
-	int32 PreOptionsNum = ValueOptions.Num();
+	int32 PreOptionsNum = ValueOptions.Num() - 1;
 	int32 CurrentOptionsNum = ValueNames.Num();
 	if (PreOptionsNum <= CurrentOptionsNum)
 	{
-		for (int32 Index = PreOptionsNum - 1; Index <= CurrentOptionsNum; ++Index)
+		for (int32 Index = PreOptionsNum; Index < CurrentOptionsNum; ++Index)
 		{
 			ValueOptions.Add(MakeShared<int32>(Index));
 		}
@@ -255,4 +258,9 @@ void FInOutMatrixDetailsCustomization::UpdateValueOptions()
 	{
 		ValueOptions.SetNum(CurrentOptionsNum);
 	}
+}
+
+void FInOutMatrixDetailsCustomization::CheckMatrixPropertyValue()
+{
+	InOutMatrix->ClampValue(ValueNames.Num());
 }

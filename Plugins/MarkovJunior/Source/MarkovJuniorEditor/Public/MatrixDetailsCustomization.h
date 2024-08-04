@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Container/Matrix2D.h"
-#include "UObject/Object.h"
+
 
 /**
  * 
@@ -34,6 +34,10 @@ private:
 	 * to update the ValueOptions
 	 */
 	void OnValuePropertyChanged(UObject* Object, struct FPropertyChangedEvent& PropertyChangedEvent);
+	/**
+	 * the value of matrix must be clamp between -1 and ValuesName.Num -1 
+	 */
+	void CheckMatrixPropertyValue();
 
 private:
 	FInOutMatrix2* GetInOutMatrix() const;
@@ -62,3 +66,5 @@ private:
 	TArray<TSharedRef<int32>> ValueOptions;
 	TArray<FName> ValueNames;
 };
+
+
