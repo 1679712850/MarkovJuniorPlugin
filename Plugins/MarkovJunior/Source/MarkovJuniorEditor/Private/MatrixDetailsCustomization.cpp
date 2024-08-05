@@ -6,6 +6,7 @@
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
 #include "MarkovJuniorEditorLog.h"
+#include "MarkovJuniorModel.h"
 #include "PropertyCustomizationHelpers.h"
 #include "Container/Matrix2D.h"
 
@@ -15,10 +16,6 @@ FInOutMatrixDetailsCustomization::FInOutMatrixDetailsCustomization()
 
 	FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this,&FInOutMatrixDetailsCustomization::OnValuePropertyChanged);
 	
-	ValueNames.Add(TEXT("ceshi1"));
-	ValueNames.Add(TEXT("ceshi2"));
-	ValueNames.Add(TEXT("ceshi3"));
-	ValueNames.Add(TEXT("ceshi4"));
 }
 
 void FInOutMatrixDetailsCustomization::CustomizeHeader(TSharedRef<IPropertyHandle> PropertyHandle,
@@ -30,9 +27,11 @@ void FInOutMatrixDetailsCustomization::CustomizeHeader(TSharedRef<IPropertyHandl
 	SizeXPropertyHandle = PropertyHandle->GetChildHandle(0)->GetChildHandle(0);
 	SizeYPropertyHandle = PropertyHandle->GetChildHandle(0)->GetChildHandle(1);
 
+	// add the delegate to the size property
 	SizeXPropertyHandle->SetOnPropertyValueChanged(FSimpleDelegate::CreateRaw(this,&FInOutMatrixDetailsCustomization::OnMatrixSizeChanged));
 	SizeYPropertyHandle->SetOnPropertyValueChanged(FSimpleDelegate::CreateRaw(this,&FInOutMatrixDetailsCustomization::OnMatrixSizeChanged));
-
+	SizeXPropertyHandle->SetOnPropertyResetToDefault(FSimpleDelegate::CreateRaw(this,&FInOutMatrixDetailsCustomization::OnMatrixSizeChanged));
+	SizeYPropertyHandle->SetOnPropertyResetToDefault(FSimpleDelegate::CreateRaw(this,&FInOutMatrixDetailsCustomization::OnMatrixSizeChanged));
 
 	InMatrixPropertyHandle = PropertyHandle->GetChildHandle(1);
 	OutMatrixPropertyHandle = PropertyHandle->GetChildHandle(2);
@@ -65,8 +64,8 @@ void FInOutMatrixDetailsCustomization::CustomizeChildren(TSharedRef<IPropertyHan
 	auto& InRow = ChildBuilder.AddCustomRow(FText::FromString(TEXT("InMatrix")));
 	
 	InMatrixGridPanel = SNew(SGridPanel);
-	GenerateInMatrixGridWidget();
-	
+
+	GenerateMatrixGridWidget(InMatrixGridPanel, &InOutMatrix->InMatrix);
 	InRow.WholeRowContent()
 	[
 		SNew(SBox)
@@ -80,7 +79,8 @@ void FInOutMatrixDetailsCustomization::CustomizeChildren(TSharedRef<IPropertyHan
 	auto& OutRow = ChildBuilder.AddCustomRow(FText::FromString(TEXT("OutMatrix")));
 
 	OutMatrixGridPanel = SNew(SGridPanel);
-	GenerateOutMatrixGridWidget();
+	GenerateMatrixGridWidget(OutMatrixGridPanel, &InOutMatrix->OutMatrix);
+
 	OutRow.WholeRowContent()
 		[
 			SNew(SBox)
@@ -92,32 +92,38 @@ void FInOutMatrixDetailsCustomization::CustomizeChildren(TSharedRef<IPropertyHan
 			]
 		];
 }
-// todo : combine to one function
-void FInOutMatrixDetailsCustomization::GenerateInMatrixGridWidget()
+
+void FInOutMatrixDetailsCustomization::GenerateMatrixGridWidget(TSharedPtr<SGridPanel>& GridPanel, FMatrix2* Matrix)
 {
 	CheckMatrixPropertyValue();
-
-	InMatrixGridPanel->ClearChildren();
+	GridPanel->ClearChildren();
 	
 	UpdateValueOptions();
-	
-	FMatrix2* InMatrix = &InOutMatrix->InMatrix;
-	for (int32 RowIndex = 0; RowIndex < InMatrix->GetRowNum(); ++RowIndex)
+
+	for (int32 RowIndex = 0; RowIndex < Matrix->GetRowNum(); ++RowIndex)
 	{
-		for (int32 ColumnIndex = 0; ColumnIndex < InMatrix->GetColumnNum(); ++ColumnIndex)
+		for (int32 ColumnIndex = 0; ColumnIndex < Matrix->GetColumnNum(); ++ColumnIndex)
 		{
-			InMatrixGridPanel->AddSlot(ColumnIndex,RowIndex)
+			GridPanel->AddSlot(ColumnIndex,RowIndex)
 			[
-				// todo:change this to FName,更换为特定Value的Name，来显示
 				SNew(SComboBox<TSharedRef<int32>>)
 				.OptionsSource(&ValueOptions)
 				.OnGenerateWidget_Lambda([this](TSharedRef<int32> ValueIndex)
 				{
+					FText DisplayText;
+					if (*ValueIndex == -1)
+					{
+						DisplayText = FText::FromString(TEXT("-1"));
+					}
+					else
+					{
+						DisplayText = FText::FromName(ValueNames[*ValueIndex]);
+					}
 					return SNew(STextBlock)
-						.Text(FText::FromString(FString::Printf(TEXT("%d"), *ValueIndex)))
+						.Text(DisplayText)
 						.Font(IPropertyTypeCustomizationUtils::GetRegularFont());
 				})
-				.OnSelectionChanged_Lambda([RowIndex,ColumnIndex,InMatrix, this](TSharedPtr<int32> InValue, ESelectInfo::Type InSelectType)
+				.OnSelectionChanged_Lambda([RowIndex,ColumnIndex,Matrix, this](TSharedPtr<int32> InValue, ESelectInfo::Type InSelectType)
 				{
 					// This is for the initial selection.
 					if (InSelectType == ESelectInfo::Direct)
@@ -126,76 +132,16 @@ void FInOutMatrixDetailsCustomization::GenerateInMatrixGridWidget()
 					}
 					if (InValue.IsValid())
 					{
-						InMatrix->Set(RowIndex,ColumnIndex,*InValue);
+						Matrix->Data[Matrix->GetIndex(RowIndex,ColumnIndex)] = *InValue;
 					}
-					UE_LOG(LogMarkovJuniorEditor,Warning,TEXT("MartrixData: %s"),*(InMatrix->ToString()))
+					UE_LOG(LogMarkovJuniorEditor,Warning,TEXT("MartrixData: %s"),*Matrix->ToString())
 				})
 				[
 					SNew(STextBlock)
 					.Font(IPropertyTypeCustomizationUtils::GetRegularFont())
-					.Text_Lambda([RowIndex,ColumnIndex,InMatrix,this]()
+					.Text_Lambda([RowIndex,ColumnIndex,Matrix,this]()
 						{
-							int32 Value = InMatrix->Get(RowIndex,ColumnIndex);
-							FText DisplayText;
-							if (Value == -1)
-							{
-								DisplayText = FText::FromString(FString::Printf(TEXT("%d"), Value));
-							}
-							else
-							{
-								DisplayText = FText::FromName(ValueNames[Value]);
-							}
-							return DisplayText;
-						}
-					)
-				]
-			];
-		}
-	}
-}
-
-void FInOutMatrixDetailsCustomization::GenerateOutMatrixGridWidget()
-{
-	CheckMatrixPropertyValue();
-	OutMatrixGridPanel->ClearChildren();
-	
-	UpdateValueOptions();
-
-	FMatrix2* OutMatrix = &InOutMatrix->OutMatrix;
-	for (int32 RowIndex = 0; RowIndex < OutMatrix->GetRowNum(); ++RowIndex)
-	{
-		for (int32 ColumnIndex = 0; ColumnIndex < OutMatrix->GetColumnNum(); ++ColumnIndex)
-		{
-			OutMatrixGridPanel->AddSlot(ColumnIndex,RowIndex)
-			[
-				// todo:change this to FName,更换为特定Value的Name，来显示
-				SNew(SComboBox<TSharedRef<int32>>)
-				.OptionsSource(&ValueOptions)
-				.OnGenerateWidget_Lambda([this](TSharedRef<int32> ValueIndex)
-				{
-					return SNew(STextBlock)
-						.Text(FText::FromString(FString::Printf(TEXT("%d"), *ValueIndex)))
-						.Font(IPropertyTypeCustomizationUtils::GetRegularFont());
-				})
-				.OnSelectionChanged_Lambda([RowIndex,ColumnIndex,OutMatrix, this](TSharedPtr<int32> InValue, ESelectInfo::Type InSelectType)
-				{
-					// This is for the initial selection.
-					if (InSelectType == ESelectInfo::Direct)
-					{
-						return;
-					}
-					if (InValue.IsValid())
-					{
-						OutMatrix->Data[OutMatrix->GetIndex(RowIndex,ColumnIndex)] = *InValue;
-					}
-					UE_LOG(LogMarkovJuniorEditor,Warning,TEXT("MartrixData: %s"),*OutMatrix->ToString())
-				})
-				[
-					SNew(STextBlock)
-					.Font(IPropertyTypeCustomizationUtils::GetRegularFont())
-					.Text_Lambda([RowIndex,ColumnIndex,OutMatrix,this]()
-						{
-							int32 Value = OutMatrix->Get(RowIndex,ColumnIndex);
+							int32 Value = Matrix->Get(RowIndex,ColumnIndex);
 							FText DisplayText;
 							if (Value == -1)
 							{
@@ -216,7 +162,17 @@ void FInOutMatrixDetailsCustomization::GenerateOutMatrixGridWidget()
 
 void FInOutMatrixDetailsCustomization::OnValuePropertyChanged(UObject* Object, struct FPropertyChangedEvent& PropertyChangedEvent)
 {
-	// todo : when model changed
+	if (auto Model = Cast<UMarkovJuniorModel>(Object))
+	{
+		ValueNames.Empty();
+		for (auto& Value : Model->Values)
+		{
+			ValueNames.Emplace(Value.Name);
+		}
+		CheckMatrixPropertyValue();
+
+		UpdateValueOptions();
+	}
 }
 
 
@@ -239,8 +195,11 @@ FInOutMatrix2* FInOutMatrixDetailsCustomization::GetInOutMatrix() const
 void FInOutMatrixDetailsCustomization::OnMatrixSizeChanged()
 {
 	InOutMatrix->OnResize();
-	GenerateInMatrixGridWidget();
-	GenerateOutMatrixGridWidget();
+	// GenerateInMatrixGridWidget();
+	// GenerateOutMatrixGridWidget();
+
+	GenerateMatrixGridWidget(OutMatrixGridPanel, &InOutMatrix->OutMatrix);
+	GenerateMatrixGridWidget(InMatrixGridPanel, &InOutMatrix->InMatrix);
 }
 
 void FInOutMatrixDetailsCustomization::UpdateValueOptions()
@@ -262,5 +221,5 @@ void FInOutMatrixDetailsCustomization::UpdateValueOptions()
 
 void FInOutMatrixDetailsCustomization::CheckMatrixPropertyValue()
 {
-	InOutMatrix->ClampValue(ValueNames.Num());
+	InOutMatrix->ClampValue(ValueNames.Num() - 1);
 }

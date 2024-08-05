@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "MarkovJunior.h"
+#include "MarkovJuniorLog.h"
 #include "MarkovJuniorStyle.h"
 #include "MarkovJuniorCommands.h"
 #include "LevelEditor.h"
@@ -107,3 +108,4 @@ void FMarkovJuniorModule::RegisterMenus()
 #undef LOCTEXT_NAMESPACE
 	
 IMPLEMENT_MODULE(FMarkovJuniorModule, MarkovJunior)
+DEFINE_LOG_CATEGORY(LogMarkovJunior);

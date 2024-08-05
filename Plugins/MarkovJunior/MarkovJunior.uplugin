@@ -17,6 +17,11 @@
 	"Modules": [
 		{
 			"Name": "MarkovJunior",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "MarkovJuniorEditor",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
 		}

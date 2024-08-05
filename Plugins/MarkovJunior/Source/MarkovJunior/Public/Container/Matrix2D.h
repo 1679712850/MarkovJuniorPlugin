@@ -35,6 +35,11 @@ struct MARKOVJUNIOR_API FMatrix2
 		return Size.Y;
 	}
 
+	FORCEINLINE int32 Num() const
+	{
+		return Size.X * Size.Y;
+	}
+
 	FString ToString();
 
 	const int32 Get(int32 Row,int32 Column) const;
@@ -53,8 +58,10 @@ struct MARKOVJUNIOR_API FInOutMatrix2
 {
 	GENERATED_BODY()
 
+	FInOutMatrix2();
+
 	UPROPERTY(EditAnywhere,Category="MarkovJunior")
-	FIntVector2 Size = FIntVector2(0);
+	FIntVector2 Size;
 
 	UPROPERTY(EditAnywhere,Category="MarkovJunior")
 	FMatrix2 InMatrix;

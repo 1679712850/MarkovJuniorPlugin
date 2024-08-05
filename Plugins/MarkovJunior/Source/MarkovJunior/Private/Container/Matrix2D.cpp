@@ -70,6 +70,14 @@ void FMatrix2::OnRemoveLastColumns(int32 Num)
 	}
 }
 
+FInOutMatrix2::FInOutMatrix2()
+{
+	Size = FIntVector2(1);
+
+	InMatrix.SetSize(Size);
+	OutMatrix.SetSize(Size);
+}
+
 void FMatrix2::SetSize(FIntVector2 NewSize)
 {
 	FIntVector2 PreSize = Size;
@@ -162,6 +170,10 @@ void FMatrix2::ClampValue(int32 Max)
 
 void FInOutMatrix2::OnResize()
 {
+	if (Size.X <= 0 || Size.Y <= 0)
+	{
+		Size = FIntVector2(1);
+	}
 	InMatrix.SetSize(Size);
 	OutMatrix.SetSize(Size);
 }
