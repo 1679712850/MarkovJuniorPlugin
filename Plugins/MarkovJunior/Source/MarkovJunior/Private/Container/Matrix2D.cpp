@@ -104,7 +104,6 @@ void FMatrix2::SetSize(FIntVector2 NewSize)
 	{
 		OnRemoveLastColumns(-DeltaSize.Y);
 	}
-	UE_LOG(LogMarkovJunior,Warning,TEXT("MartrixData: %s"),*ToString())
 }
 
 FString FMatrix2::ToString()

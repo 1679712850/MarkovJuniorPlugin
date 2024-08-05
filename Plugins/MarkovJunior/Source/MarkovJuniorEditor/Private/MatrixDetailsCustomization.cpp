@@ -15,7 +15,7 @@ FInOutMatrixDetailsCustomization::FInOutMatrixDetailsCustomization()
 	ValueOptions.Add(MakeShared<int32>(-1));
 
 	FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this,&FInOutMatrixDetailsCustomization::OnValuePropertyChanged);
-	
+	FCoreUObjectDelegates::OnAssetLoaded.AddRaw(this,&FInOutMatrixDetailsCustomization::OnModelAssetLoaded);
 }
 
 void FInOutMatrixDetailsCustomization::CustomizeHeader(TSharedRef<IPropertyHandle> PropertyHandle,
@@ -134,7 +134,6 @@ void FInOutMatrixDetailsCustomization::GenerateMatrixGridWidget(TSharedPtr<SGrid
 					{
 						Matrix->Data[Matrix->GetIndex(RowIndex,ColumnIndex)] = *InValue;
 					}
-					UE_LOG(LogMarkovJuniorEditor,Warning,TEXT("MartrixData: %s"),*Matrix->ToString())
 				})
 				[
 					SNew(STextBlock)
@@ -162,6 +161,12 @@ void FInOutMatrixDetailsCustomization::GenerateMatrixGridWidget(TSharedPtr<SGrid
 
 void FInOutMatrixDetailsCustomization::OnValuePropertyChanged(UObject* Object, struct FPropertyChangedEvent& PropertyChangedEvent)
 {
+	OnModelAssetLoaded(Object);
+}
+
+void FInOutMatrixDetailsCustomization::OnModelAssetLoaded(UObject* Object)
+{
+	UE_LOG(LogMarkovJuniorEditor,Warning,TEXT("OnModelAssetLoaded"))
 	if (auto Model = Cast<UMarkovJuniorModel>(Object))
 	{
 		ValueNames.Empty();

@@ -34,6 +34,7 @@ private:
 	 * to update the ValueOptions
 	 */
 	void OnValuePropertyChanged(UObject* Object, struct FPropertyChangedEvent& PropertyChangedEvent);
+	void OnModelAssetLoaded(UObject* Object);
 	/**
 	 * the value of matrix must be clamp between -1 and ValuesName.Num -1 
 	 */
