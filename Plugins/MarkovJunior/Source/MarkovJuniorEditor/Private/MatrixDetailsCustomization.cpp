@@ -11,29 +11,6 @@
 #include "PropertyCustomizationHelpers.h"
 #include "Container/Matrix2D.h"
 
-FInOutMatrixDetailsCustomization::FInOutMatrixDetailsCustomization()
-{
-	ValueOptions.Add(MakeShared<int32>(-1));
-
-	OnObjectPropertyChangedHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this,&FInOutMatrixDetailsCustomization::OnValuePropertyChanged);
-
-	UAssetEditorSubsystem* const AssetEditorSubsystem = GEditor ? GEditor->GetEditorSubsystem<UAssetEditorSubsystem>() : nullptr;
-	if (AssetEditorSubsystem)
-	{
-		OnAssetEditorOpenedHandle = AssetEditorSubsystem->OnAssetEditorOpened().AddRaw(this,&FInOutMatrixDetailsCustomization::OnModelAssetLoaded);
-	}
-
-}
-
-FInOutMatrixDetailsCustomization::~FInOutMatrixDetailsCustomization()
-{
-	UAssetEditorSubsystem* const AssetEditorSubsystem = GEditor ? GEditor->GetEditorSubsystem<UAssetEditorSubsystem>() : nullptr;
-	if (AssetEditorSubsystem)
-	{
-		AssetEditorSubsystem->OnAssetEditorOpened().Remove(OnAssetEditorOpenedHandle);
-	}
-	FCoreUObjectDelegates::OnObjectPropertyChanged.Remove(OnObjectPropertyChangedHandle);
-}
 
 void FInOutMatrixDetailsCustomization::CustomizeHeader(TSharedRef<IPropertyHandle> PropertyHandle,
                                                        FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& CustomizationUtils)
@@ -114,8 +91,6 @@ void FInOutMatrixDetailsCustomization::GenerateMatrixGridWidget(TSharedPtr<SGrid
 {
 	GridPanel->ClearChildren();
 	
-	UpdateValueOptions();
-
 	for (int32 RowIndex = 0; RowIndex < Matrix->GetRowNum(); ++RowIndex)
 	{
 		for (int32 ColumnIndex = 0; ColumnIndex < Matrix->GetColumnNum(); ++ColumnIndex)
@@ -123,7 +98,7 @@ void FInOutMatrixDetailsCustomization::GenerateMatrixGridWidget(TSharedPtr<SGrid
 			GridPanel->AddSlot(ColumnIndex,RowIndex)
 			[
 				SNew(SComboBox<TSharedRef<int32>>)
-				.OptionsSource(&ValueOptions)
+				.OptionsSource(&InOutMatrix->ValueOptions)
 				.OnGenerateWidget_Lambda([this](TSharedRef<int32> ValueIndex)
 				{
 					FText DisplayText;
@@ -133,7 +108,7 @@ void FInOutMatrixDetailsCustomization::GenerateMatrixGridWidget(TSharedPtr<SGrid
 					}
 					else
 					{
-						DisplayText = FText::FromName(ValueNames[*ValueIndex]);
+						DisplayText = FText::FromName(InOutMatrix->ValueNames[*ValueIndex]);
 					}
 					return SNew(STextBlock)
 						.Text(DisplayText)
@@ -164,7 +139,7 @@ void FInOutMatrixDetailsCustomization::GenerateMatrixGridWidget(TSharedPtr<SGrid
 							}
 							else
 							{
-								DisplayText = FText::FromName(ValueNames[Value]);
+								DisplayText = FText::FromName(InOutMatrix->ValueNames[Value]);
 							}
 							return DisplayText;
 						}
@@ -175,26 +150,6 @@ void FInOutMatrixDetailsCustomization::GenerateMatrixGridWidget(TSharedPtr<SGrid
 	}
 }
 
-void FInOutMatrixDetailsCustomization::OnValuePropertyChanged(UObject* Object, struct FPropertyChangedEvent& PropertyChangedEvent)
-{
-	OnModelAssetLoaded(Object);
-}
-
-void FInOutMatrixDetailsCustomization::OnModelAssetLoaded(UObject* Object)
-{
-	if (auto Model = Cast<UMarkovJuniorModel>(Object))
-	{
-		UE_LOG(LogMarkovJuniorEditor,Warning,TEXT("OnModelAssetLoaded"))
-		ValueNames.Empty();
-		for (auto& Value : Model->Values)
-		{
-			ValueNames.Emplace(Value.Name);
-		}
-		CheckMatrixPropertyValue();
-
-		UpdateValueOptions();
-	}
-}
 
 
 FInOutMatrix2* FInOutMatrixDetailsCustomization::GetInOutMatrix() const
@@ -223,24 +178,4 @@ void FInOutMatrixDetailsCustomization::OnMatrixSizeChanged()
 	GenerateMatrixGridWidget(InMatrixGridPanel, &InOutMatrix->InMatrix);
 }
 
-void FInOutMatrixDetailsCustomization::UpdateValueOptions()
-{
-	int32 PreOptionsNum = ValueOptions.Num() - 1;
-	int32 CurrentOptionsNum = ValueNames.Num();
-	if (PreOptionsNum <= CurrentOptionsNum)
-	{
-		for (int32 Index = PreOptionsNum; Index < CurrentOptionsNum; ++Index)
-		{
-			ValueOptions.Add(MakeShared<int32>(Index));
-		}
-	}
-	else
-	{
-		ValueOptions.SetNum(CurrentOptionsNum);
-	}
-}
 
-void FInOutMatrixDetailsCustomization::CheckMatrixPropertyValue()
-{
-	InOutMatrix->ClampValue(ValueNames.Num() - 1);
-}

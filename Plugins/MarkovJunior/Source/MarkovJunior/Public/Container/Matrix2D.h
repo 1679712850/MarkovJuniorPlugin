@@ -6,6 +6,7 @@
 #include "UObject/Object.h"
 #include "Matrix2D.generated.h"
 
+struct FMarkovJuniorValue;
 /**
  * 
  */
@@ -15,9 +16,10 @@ struct MARKOVJUNIOR_API FMatrix2
 	GENERATED_BODY()
 	
 	FMatrix2();
+	
 	UPROPERTY()
-	FIntVector2 Size;
-	UPROPERTY(EditAnywhere,meta=(ClampMin = -1))
+	FIntVector2 Size = FIntVector2(1);
+	UPROPERTY()
 	TArray<int32> Data;
 
 	/**
@@ -57,11 +59,9 @@ USTRUCT()
 struct MARKOVJUNIOR_API FInOutMatrix2
 {
 	GENERATED_BODY()
-
-	FInOutMatrix2();
-
+	
 	UPROPERTY(EditAnywhere,Category="MarkovJunior")
-	FIntVector2 Size;
+	FIntVector2 Size = FIntVector2(1);
 
 	UPROPERTY(EditAnywhere,Category="MarkovJunior")
 	FMatrix2 InMatrix;
@@ -72,6 +72,18 @@ struct MARKOVJUNIOR_API FInOutMatrix2
 	void OnResize();
 
 	void ClampValue(int32 Max);
+public:
+#if WITH_EDITOR
+	/**
+	 * the value of matrix must be clamp between -1 and ValuesName.Num -1 
+	 */
+	void CheckMatrixPropertyValue();
+	void UpdateValueOptions();
+	void PostModelEdited(const TArray<FMarkovJuniorValue>& Values);
+
+	TArray<TSharedRef<int32>> ValueOptions = {MakeShared<int32>(-1)};
+	TArray<FName> ValueNames;
+#endif
 };
 
 

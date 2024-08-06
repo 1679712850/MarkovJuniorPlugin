@@ -3,14 +3,16 @@
 
 #include "Container/Matrix2D.h"
 
+#include "MarkovJuniorGrid.h"
 #include "MarkovJuniorLog.h"
 
 
 FMatrix2::FMatrix2()
 {
-	Size = FIntVector2(0);
+	Size = FIntVector2(1);
 
 	Data.Empty();
+	Data.Add(-1);
 }
 
 void FMatrix2::OnAddRows(int32 Num)
@@ -70,14 +72,6 @@ void FMatrix2::OnRemoveLastColumns(int32 Num)
 	}
 }
 
-FInOutMatrix2::FInOutMatrix2()
-{
-	Size = FIntVector2(1);
-
-	InMatrix.SetSize(Size);
-	OutMatrix.SetSize(Size);
-}
-
 void FMatrix2::SetSize(FIntVector2 NewSize)
 {
 	FIntVector2 PreSize = Size;
@@ -104,6 +98,7 @@ void FMatrix2::SetSize(FIntVector2 NewSize)
 	{
 		OnRemoveLastColumns(-DeltaSize.Y);
 	}
+	UE_LOG(LogMarkovJunior,Warning,TEXT("Matrix Size Changed %s"),*ToString());
 }
 
 FString FMatrix2::ToString()
@@ -171,7 +166,7 @@ void FInOutMatrix2::OnResize()
 {
 	if (Size.X <= 0 || Size.Y <= 0)
 	{
-		Size = FIntVector2(1);
+		return;
 	}
 	InMatrix.SetSize(Size);
 	OutMatrix.SetSize(Size);
@@ -182,3 +177,38 @@ void FInOutMatrix2::ClampValue(int32 Max)
 	InMatrix.ClampValue(Max);
 	OutMatrix.ClampValue(Max);
 }
+#if WITH_EDITOR
+void FInOutMatrix2::CheckMatrixPropertyValue()
+{
+	ClampValue(ValueNames.Num() - 1);
+}
+
+void FInOutMatrix2::UpdateValueOptions()
+{
+	int32 PreOptionsNum = ValueOptions.Num() - 1;
+	int32 CurrentOptionsNum = ValueNames.Num();
+	if (PreOptionsNum <= CurrentOptionsNum)
+	{
+		for (int32 Index = PreOptionsNum; Index < CurrentOptionsNum; ++Index)
+		{
+			ValueOptions.Add(MakeShared<int32>(Index));
+		}
+	}
+	else
+	{
+		ValueOptions.SetNum(CurrentOptionsNum);
+	}
+}
+
+void FInOutMatrix2::PostModelEdited(const TArray<FMarkovJuniorValue>& Values)
+{
+	ValueNames.Empty();
+	for (auto& Value : Values)
+	{
+		ValueNames.Emplace(Value.Name);
+	}
+	CheckMatrixPropertyValue();
+
+	UpdateValueOptions();
+}
+#endif
