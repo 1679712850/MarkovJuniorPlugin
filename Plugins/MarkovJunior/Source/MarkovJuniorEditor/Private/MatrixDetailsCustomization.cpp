@@ -3,6 +3,7 @@
 
 #include "MatrixDetailsCustomization.h"
 
+#include "AssetEditorModeManager.h"
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
 #include "MarkovJuniorEditorLog.h"
@@ -14,12 +15,28 @@ FInOutMatrixDetailsCustomization::FInOutMatrixDetailsCustomization()
 {
 	ValueOptions.Add(MakeShared<int32>(-1));
 
-	FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this,&FInOutMatrixDetailsCustomization::OnValuePropertyChanged);
-	FCoreUObjectDelegates::OnAssetLoaded.AddRaw(this,&FInOutMatrixDetailsCustomization::OnModelAssetLoaded);
+	OnObjectPropertyChangedHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this,&FInOutMatrixDetailsCustomization::OnValuePropertyChanged);
+
+	UAssetEditorSubsystem* const AssetEditorSubsystem = GEditor ? GEditor->GetEditorSubsystem<UAssetEditorSubsystem>() : nullptr;
+	if (AssetEditorSubsystem)
+	{
+		OnAssetEditorOpenedHandle = AssetEditorSubsystem->OnAssetEditorOpened().AddRaw(this,&FInOutMatrixDetailsCustomization::OnModelAssetLoaded);
+	}
+
+}
+
+FInOutMatrixDetailsCustomization::~FInOutMatrixDetailsCustomization()
+{
+	UAssetEditorSubsystem* const AssetEditorSubsystem = GEditor ? GEditor->GetEditorSubsystem<UAssetEditorSubsystem>() : nullptr;
+	if (AssetEditorSubsystem)
+	{
+		AssetEditorSubsystem->OnAssetEditorOpened().Remove(OnAssetEditorOpenedHandle);
+	}
+	FCoreUObjectDelegates::OnObjectPropertyChanged.Remove(OnObjectPropertyChangedHandle);
 }
 
 void FInOutMatrixDetailsCustomization::CustomizeHeader(TSharedRef<IPropertyHandle> PropertyHandle,
-                                                  FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& CustomizationUtils)
+                                                       FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& CustomizationUtils)
 {
 	MatrixPropertyHandle = PropertyHandle;
 	InOutMatrix = GetInOutMatrix();
@@ -95,7 +112,6 @@ void FInOutMatrixDetailsCustomization::CustomizeChildren(TSharedRef<IPropertyHan
 
 void FInOutMatrixDetailsCustomization::GenerateMatrixGridWidget(TSharedPtr<SGridPanel>& GridPanel, FMatrix2* Matrix)
 {
-	CheckMatrixPropertyValue();
 	GridPanel->ClearChildren();
 	
 	UpdateValueOptions();
@@ -166,9 +182,9 @@ void FInOutMatrixDetailsCustomization::OnValuePropertyChanged(UObject* Object, s
 
 void FInOutMatrixDetailsCustomization::OnModelAssetLoaded(UObject* Object)
 {
-	UE_LOG(LogMarkovJuniorEditor,Warning,TEXT("OnModelAssetLoaded"))
 	if (auto Model = Cast<UMarkovJuniorModel>(Object))
 	{
+		UE_LOG(LogMarkovJuniorEditor,Warning,TEXT("OnModelAssetLoaded"))
 		ValueNames.Empty();
 		for (auto& Value : Model->Values)
 		{

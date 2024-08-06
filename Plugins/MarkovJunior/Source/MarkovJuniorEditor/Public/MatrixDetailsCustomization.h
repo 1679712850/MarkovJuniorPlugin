@@ -18,6 +18,7 @@ public:
 	}
 
 	FInOutMatrixDetailsCustomization();
+	~FInOutMatrixDetailsCustomization();
 
 	/** IPropertyTypeCustomization interface */
 	virtual void CustomizeHeader(TSharedRef<IPropertyHandle> PropertyHandle, FDetailWidgetRow& HeaderRow,
@@ -72,6 +73,9 @@ private:
 	TArray<TSharedRef<int32>> ValueOptions;
 	// 所有值的名称，用于显示在选项中
 	TArray<FName> ValueNames;
+
+	FDelegateHandle OnObjectPropertyChangedHandle;
+	FDelegateHandle OnAssetEditorOpenedHandle;
 };
 
 
