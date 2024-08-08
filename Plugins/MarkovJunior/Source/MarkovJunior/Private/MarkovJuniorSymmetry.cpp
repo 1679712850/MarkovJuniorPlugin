@@ -35,6 +35,10 @@ TMap<ESymmetryType,TArray<bool>> FMarkovJuniorSymmetry::CubeSubgroups = {
 	{ESymmetryType::All, MakeUInt64([](int32 Index){return true;})}
 };
 
+FMarkovJuniorSymmetry::FMarkovJuniorSymmetry()
+{
+}
+
 FMarkovJuniorSymmetry::FMarkovJuniorSymmetry(bool bThreeDimension,ESymmetryType SymmetryType)
 {
 	Symmetries = bThreeDimension ? CubeSubgroups[SymmetryType] : SquareSubgroups[SymmetryType];

@@ -19,8 +19,6 @@ class MARKOVJUNIOR_API UMarkovJuniorModel : public UDataAsset
 public:
 	UMarkovJuniorModel();
 
-	~UMarkovJuniorModel();
-
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	FString ResultPath = TEXT("/Game");
@@ -44,7 +42,7 @@ public:
 	bool bOrigin = false;
 
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
-	ESymmetryType SymmetryType = ESymmetryType::None;
+	ESymmetryType SymmetryType = ESymmetryType::All;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	TArray<FMarkovJuniorValue> Values;
@@ -56,12 +54,7 @@ public:
 public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
-private:
-	FDelegateHandle OnAssetEditorOpenedHandle;	
-private:
 	void UpdateRuleOptions();
-
-	void OnModelEditorOpened(UObject* Object);
 #endif
 };
 

@@ -20,7 +20,7 @@ public:
 #endif
 protected:
 	// UMarkovJuniorNode implementations
-	virtual bool Initialize_Implementation(UMarkovJuniorInterpreter* InInterpreter,UMarkovJuniorGrid* InGrid) override;
+	virtual bool Initialize_Implementation(UMarkovJuniorInterpreter* InInterpreter,UMarkovJuniorGrid* InGrid,const FMarkovJuniorSymmetry& ParentSymmetry) override;
 	virtual void Reset_Implementation() override;
 	virtual bool Go_Implementation() override;
 	// ~UMarkovJuniorNode implementations

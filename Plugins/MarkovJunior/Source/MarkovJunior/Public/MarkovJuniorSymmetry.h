@@ -29,8 +29,13 @@ enum class ESymmetryType : uint8
 /**
  * 
  */
+USTRUCT(BlueprintType)
 struct FMarkovJuniorSymmetry
 {
+	GENERATED_BODY()
+
+	FMarkovJuniorSymmetry();
+	
 	FMarkovJuniorSymmetry(bool bThreeDimension,ESymmetryType SymmetryType = ESymmetryType::None);
 
 	static TMap<ESymmetryType,TArray<bool>> SquareSubgroups;
@@ -48,51 +53,54 @@ struct FMarkovJuniorSymmetry
 public:
 
 	template<typename T>
-	TSet<T> GetSymmetries(const T& Element,TFunction<T(T)> YRotation,TFunction<T(T)> Reflection,
-			TFunction<T(T)> ZRotation = nullptr)
+	void GetSymmetries(const T& Element,TFunction<T(const T&)> ZRotation,TFunction<T(const T&)> Reflection,
+			TFunction<T(const T&)> YRotation,TArray<T>& Results)
 	{
 		if (bThreeDimension)
 		{
-			return GetCubeSymmetries(Element,ZRotation,YRotation,Reflection);
+			GetCubeSymmetries(Element,ZRotation,YRotation,Reflection,Results);
 		}
-		return GetSquareSymmetries(Element,YRotation,Reflection);
+		else
+		{
+			GetSquareSymmetries(Element,ZRotation,Reflection,Results);
+		}
 	}
 	
 private:
 	template<typename T>
-	TSet<T> GetSquareSymmetries(const T& Element,TFunction<T(T)> Rotation,TFunction<T(T)> Reflection)
+	void GetSquareSymmetries(const T& Element,TFunction<T(const T&)> Rotation,
+			TFunction<T(const T&)> Reflection,TArray<T>& Results)
 	{
-		TArray<T> SymmetryElements;
-		SymmetryElements.Emplace(Element);
-		SymmetryElements.Emplace(Reflection(Element));
-		SymmetryElements.Emplace(Rotation(Element));
-		SymmetryElements.Emplace(Reflection(SymmetryElements[2]));
-		SymmetryElements.Emplace(Rotation(SymmetryElements[2]));
-		SymmetryElements.Emplace(Reflection(SymmetryElements[4]));
-		SymmetryElements.Emplace(Rotation(SymmetryElements[4]));
-		SymmetryElements.Emplace(Reflection(SymmetryElements[6]));
-		
-		TSet<T> Result;
+		Results.Empty();
+		Results.Emplace(Element);
+		Results.Emplace(Reflection(Element));
+		Results.Emplace(Rotation(Element));
+		Results.Emplace(Reflection(Results[2]));
+		Results.Emplace(Rotation(Results[2]));
+		Results.Emplace(Reflection(Results[4]));
+		Results.Emplace(Rotation(Results[4]));
+		Results.Emplace(Reflection(Results[6]));
+
+		int32 DeleteCount = 0;
 		for (int Index = 0; Index < Symmetries.Num(); ++Index)
 		{
-			if (Symmetries[Index])
+			if (!Symmetries[Index])
 			{
-				Result.Emplace(SymmetryElements[Index]);
+				Results.Swap(Index - DeleteCount, Symmetries.Num() - 1 - DeleteCount);
+				DeleteCount++;
 			}
 		}
-		return Result;
+		Results.SetNum(Symmetries.Num() - DeleteCount);
 	}
 
 	template<typename T>
-	TSet<T> GetCubeSymmetries(const T& Element,TFunction<T(T)> ZRotation,
-		TFunction<T(T)> YRotation,TFunction<T(T)> Reflection)
+	void GetCubeSymmetries(const T& Element,TFunction<T(const T&)> ZRotation,
+		TFunction<T(const T&)> YRotation,TFunction<T(const T&)> Reflection,TArray<T>& Results)
 	{
 		TArray<T> SymmetryElements;
 
 		
-		TSet<T> Result;
 
-		return Result;
 	}
 
 private:

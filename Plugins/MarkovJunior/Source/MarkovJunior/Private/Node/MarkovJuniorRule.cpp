@@ -21,11 +21,11 @@ void ArrayZRotated(const TArray<int32>& Array,FIntVector Resolution,TArray<int32
 	OutArray.SetNum(Array.Num());
 	for (int32 ZIndex = 0;ZIndex < Resolution.Z; ++ZIndex)
 	{
-		for (int32 YIndex = 0;YIndex < Resolution.Y; ++YIndex)
+		for (int32 YIndex = 0;YIndex < Resolution.X; ++YIndex)
 		{
-			for (int32 XIndex = 0;XIndex < Resolution.X; ++XIndex)
+			for (int32 XIndex = 0;XIndex < Resolution.Y; ++XIndex)
 			{
-				int32 Index = ZIndex * Resolution.X * Resolution.Y + YIndex * Resolution.X + XIndex;
+				int32 Index = ZIndex * Resolution.X * Resolution.Y + YIndex * Resolution.Y + XIndex;
 				int32 ZRotatedIndex = Resolution.X -1 - YIndex + XIndex * Resolution.X + ZIndex * Resolution.X * Resolution.Y;
 				OutArray[ZRotatedIndex] = Array[Index];
 			}
@@ -37,13 +37,13 @@ void ArrayZRotated(const TArray<int32>& Array,FIntVector Resolution,TArray<int32
 void ArrayYRotated(const TArray<int32>& Array,FIntVector Resolution,TArray<int32>& OutArray)
 {
 	OutArray.SetNum(Array.Num());
-	for (int32 ZIndex = 0;ZIndex < Resolution.Z; ++ZIndex)
+	for (int32 ZIndex = 0;ZIndex < Resolution.X; ++ZIndex)
 	{
 		for (int32 YIndex = 0;YIndex < Resolution.Y; ++YIndex)
 		{
-			for (int32 XIndex = 0;XIndex < Resolution.X; ++XIndex)
+			for (int32 XIndex = 0;XIndex < Resolution.Z; ++XIndex)
 			{
-				int32 Index = ZIndex * Resolution.X * Resolution.Y + YIndex * Resolution.X + XIndex;
+				int32 Index = ZIndex * Resolution.Z * Resolution.Y + YIndex * Resolution.Z + XIndex;
 				int32 YRotatedIndex = Resolution.X -1 - ZIndex + YIndex * Resolution.X + XIndex * Resolution.X * Resolution.Y;
 				OutArray[YRotatedIndex] = Array[Index];
 			}
@@ -142,6 +142,7 @@ FMarkovJuniorRule FMarkovJuniorRule::ZRotated() const
 	ArrayZRotated(OutputValueIndices, Size, Result.OutputValueIndices);
 	
 	Result.CalculateShifts(InputShifts.Num());
+	Result.Size = FIntVector(Size.Y,Size.X,Size.Z);
 	return Result;
 }
 
@@ -153,6 +154,8 @@ FMarkovJuniorRule FMarkovJuniorRule::YRotated() const
 	ArrayYRotated(OutputValueIndices, Size, Result.OutputValueIndices);
 	
 	Result.CalculateShifts(InputShifts.Num());
+
+	Result.Size = FIntVector(Size.Z,Size.Y,Size.X);
 	return Result;
 }
 
@@ -184,11 +187,12 @@ bool FMarkovJuniorRule::operator==(const FMarkovJuniorRule& OtherRule) const
 	}
 	return true;
 }
-
+#if WITH_EDITOR
 void FMarkovJuniorRule::PostModelEdited(const TArray<FMarkovJuniorValue>& Values)
 {
 	InOutMatrix.PostModelEdited(Values);
 }
+#endif
 
 void FMarkovJuniorField::Initialize(TObjectPtr<UMarkovJuniorGrid> Grid)
 {

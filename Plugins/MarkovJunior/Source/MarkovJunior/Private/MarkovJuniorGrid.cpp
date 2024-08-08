@@ -35,21 +35,10 @@ int32 UMarkovJuniorGrid::CalculateWave(const TArray<int32>& ValueIndices)
 	return Result;
 }
 
-int32 UMarkovJuniorGrid::GetState(const FIntVector& Position) const
-{
-	if (Position.X < 0 || Position.X >= Resolution.X || Position.Y < 0 || Position.Y >= Resolution.Y || Position.Z < 0 || Position.Z >= Resolution.Z)
-	{
-		return -1;
-	}
-	return State[Position.X + Position.Y * Resolution.X + Position.Z * Resolution.X * Resolution.Y];
-}
 
 void UMarkovJuniorGrid::SetState(const FIntVector& Position, int32 Value)
 {
-	if (Position.X >= 0 && Position.X < Resolution.X && Position.Y >= 0 && Position.Y < Resolution.Y && Position.Z >= 0 && Position.Z < Resolution.Z)
-	{
-		State[Position.X + Position.Y * Resolution.X + Position.Z * Resolution.X * Resolution.Y] = Value;
-	}
+	State[Position.X + Position.Y * Resolution.X + Position.Z * Resolution.X * Resolution.Y] = Value;
 }
 
 void UMarkovJuniorGrid::GetStates(TArray<int32>& OutStates) const
@@ -60,19 +49,21 @@ void UMarkovJuniorGrid::GetStates(TArray<int32>& OutStates) const
 bool UMarkovJuniorGrid::MatchRule(const FMarkovJuniorRule& Rule, const FIntVector& Position)
 {
 	FIntVector Delta = FIntVector(0);
-	for (int32 Index = 0; Index < Rule.InputValueWaves.Num(); ++Index)
+	auto& InputValueWaves = Rule.InputValueWaves;
+	auto& Size = Rule.Size;
+	for (int32 Index = 0; Index < InputValueWaves.Num(); ++Index)
 	{
-		if (!(Rule.InputValueWaves[Index]
+		if (!(InputValueWaves[Index]
 			& (1 << GetState(Position + Delta))) )
 		{
 			return false;
 		}
 		++Delta.X;
-		if (Delta.X == Rule.Size.X)
+		if (Delta.X == Size.X)
 		{
 			Delta.X = 0;
 			++Delta.Y;
-			if (Delta.Y == Rule.Size.Y)
+			if (Delta.Y == Size.Y)
 			{
 				Delta.Y = 0;
 				++Delta.Z;

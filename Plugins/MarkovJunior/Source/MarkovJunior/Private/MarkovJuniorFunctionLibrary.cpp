@@ -2,7 +2,7 @@
 
 
 #include "MarkovJuniorFunctionLibrary.h"
-
+#include "Engine/Texture2D.h"
 #include "MarkovJuniorInterpreter.h"
 #include "MarkovJuniorLog.h"
 
@@ -24,18 +24,15 @@ void UMarkovJuniorFunctionLibrary::ForEachElement(TArray<int32>& Array, FIntVect
 	}
 }
 
-int32 UMarkovJuniorFunctionLibrary::PositionAsIndex(FIntVector Position, FIntVector Resolution)
-{
-	return Position.X + Position.Y * Resolution.X + Position.Z * Resolution.X * Resolution.Y;
-}
 
 void UMarkovJuniorFunctionLibrary::Run(UObject* WorldContext, UMarkovJuniorModel* Model)
 {
 	auto Interpreter = NewObject<UMarkovJuniorInterpreter>(WorldContext);
 	Interpreter->Initialize(Model);
-
+	auto Time1 = FDateTime::Now();
 	Interpreter->Run(FMath::Rand());
-
+	auto Time2 = FDateTime::Now();
+	UE_LOG(LogMarkovJunior,Warning,TEXT("Run Time: %f"), (Time2 - Time1).GetTotalSeconds());
 	TArray<int32> States;
 	Interpreter->GetStates(States);
 
@@ -63,12 +60,21 @@ void UMarkovJuniorFunctionLibrary::Run(UObject* WorldContext, UMarkovJuniorModel
 			}
 		}
 	}
+#if WITH_EDITOR
 	CreateTexture(Model->ResultPath, Model->ResultName, FIntVector2(Size.X * Model->PixelSize, Size.Y * Model->PixelSize), Color);
+#endif
 }
-
+#if WITH_EDITOR
 UTexture* UMarkovJuniorFunctionLibrary::CreateTexture(const FString& Path,const FString& Name,FIntVector2 Size,TArray<FColor> Data)
 {
-	const ETextureSourceFormat format = ETextureSourceFormat::TSF_BGRA8;  
+	const ETextureSourceFormat format = ETextureSourceFormat::TSF_BGRA8;
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	if(!PlatformFile.DirectoryExists(*Path))
+	{
+		PlatformFile.CreateDirectory(*Path);
+	}
   
 	//包的完整路径：
 	const FString PackageName = Path + TEXT("/") + Name;  
@@ -79,7 +85,7 @@ UTexture* UMarkovJuniorFunctionLibrary::CreateTexture(const FString& Path,const 
 	//创建纹理对象：  
 	UTexture2D* Texture = NewObject<UTexture2D>(pacakge, FName(*Name), RF_Public | RF_Standalone);  
   
-	//初始化数据：  
+	//初始化数据：
 	Texture->Source.Init(Size.X, Size.Y, 1, 1, format);  
 	//得到数据的指针  
 	uint32* BufferAddress = (uint32*)Texture->Source.LockMip(0);  
@@ -96,3 +102,4 @@ UTexture* UMarkovJuniorFunctionLibrary::CreateTexture(const FString& Path,const 
 
 	return Texture;
 }
+#endif

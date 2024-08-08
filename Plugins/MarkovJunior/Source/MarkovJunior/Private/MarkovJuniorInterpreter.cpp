@@ -17,9 +17,10 @@ void UMarkovJuniorInterpreter::Initialize(TObjectPtr<UMarkovJuniorModel> Model)
 
 	Steps = Model->Steps;
 
+	const FMarkovJuniorSymmetry Symmetry(Model->bThreeDimensional,Model->SymmetryType);
 	if (RootNode)
 	{
-		RootNode->Initialize(this,Grid);
+		RootNode->Initialize(this,Grid,Symmetry);
 	}
 }
 
@@ -48,7 +49,6 @@ void UMarkovJuniorInterpreter::Run(int32 Seed)
 		Counter++;
 		Firsts.Add(Changes.Num());
 	}
-	UE_LOG(LogMarkovJunior,Warning,TEXT("%s"),*Grid->ToString());
 }
 
 void UMarkovJuniorInterpreter::SetCurrentNode(TObjectPtr<UMarkovJuniorBranchNode> BranchNode)

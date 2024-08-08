@@ -19,10 +19,14 @@ public:
 	static void ForEachElement(TArray<int32>& Array,FIntVector Resolution,
 		TFunction<void(int32/* Value */,FIntVector /* Position */)> Func);
 
-	static int32 PositionAsIndex(FIntVector Position,FIntVector Resolution);
+	FORCEINLINE static int32 PositionAsIndex(FIntVector Position,FIntVector Resolution)
+	{
+		return Position.X + Position.Y * Resolution.X + Position.Z * Resolution.X * Resolution.Y;
+	}
 
 	UFUNCTION(BlueprintCallable,Category="MarkovJunior",meta=(WorldContext="WorldContextObject"))
 	static void Run(UObject* WorldContextObject,UMarkovJuniorModel* Model);
-
+#if WITH_EDITOR
 	static UTexture* CreateTexture(const FString& Path,const FString& Name,FIntVector2 Size,TArray<FColor> Data);
+#endif
 };

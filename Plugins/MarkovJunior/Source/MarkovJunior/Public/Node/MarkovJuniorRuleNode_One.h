@@ -22,7 +22,7 @@ protected:
 	// ~UMarkovJuniorNode implementation
 
 private:
-	TPair<FIntVector, int32> RandomMatch();
+	void RandomMatch(TPair<FIntVector, int32>& ResultMatch);
 	void Apply(const FMarkovJuniorRule& Rule, const FIntVector& Position);
 	
 };

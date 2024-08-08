@@ -4,15 +4,16 @@
 #include "Node/MarkovJuniorBranchNode.h"
 #include "MarkovJuniorInterpreter.h"
 
-bool UMarkovJuniorBranchNode::Initialize_Implementation(UMarkovJuniorInterpreter* InInterpreter,UMarkovJuniorGrid* InGrid)
+bool UMarkovJuniorBranchNode::Initialize_Implementation(UMarkovJuniorInterpreter* InInterpreter,UMarkovJuniorGrid* InGrid,const FMarkovJuniorSymmetry& ParentSymmetry)
 {
-	Super::Initialize_Implementation(InInterpreter, InGrid);
-	// todo:symmetry process
-
+	Super::Initialize_Implementation(InInterpreter, InGrid, ParentSymmetry);
+	
+	FMarkovJuniorSymmetry Symmetry(InGrid->GetResolution().Z != 1,SymmetryType);
+	Symmetry |= ParentSymmetry;
 	for (auto& ChildNode : ChildNodes)
 	{
 		// initialize the child node
-		if (!ChildNode->Initialize(InInterpreter, InGrid))
+		if (!ChildNode->Initialize(InInterpreter, InGrid,Symmetry))
 		{
 			return false;
 		}
@@ -55,7 +56,7 @@ bool UMarkovJuniorBranchNode::Go_Implementation()
 	Reset();
 	return false;
 }
-
+#if WITH_EDITOR
 void UMarkovJuniorBranchNode::PostModelEdited(const TArray<FMarkovJuniorValue>& Values)
 {
 	for (auto& Child : ChildNodes)
@@ -66,6 +67,7 @@ void UMarkovJuniorBranchNode::PostModelEdited(const TArray<FMarkovJuniorValue>& 
 		}
 	}
 }
+#endif
 
 
 bool UMarkovJuniorBranchNode_Markov::Go_Implementation()

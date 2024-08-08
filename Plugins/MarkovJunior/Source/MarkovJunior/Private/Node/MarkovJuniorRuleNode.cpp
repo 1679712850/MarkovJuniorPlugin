@@ -6,19 +6,50 @@
 #include "MarkovJuniorFunctionLibrary.h"
 #include "MarkovJuniorInterpreter.h"
 
-bool UMarkovJuniorRuleNode::Initialize_Implementation(UMarkovJuniorInterpreter* InInterpreter,
-                                                      UMarkovJuniorGrid* InGrid)
+FMarkovJuniorRule ZRotate(const FMarkovJuniorRule& Rule)
 {
-	Super::Initialize_Implementation(InInterpreter, InGrid);
+	return Rule.ZRotated();
+}
 
+FMarkovJuniorRule YRotate(const FMarkovJuniorRule& Rule)
+{
+	return Rule.YRotated();
+}
+FMarkovJuniorRule Reflect(const FMarkovJuniorRule& Rule)
+{
+	return Rule.Reflected();
+}
+
+bool UMarkovJuniorRuleNode::Initialize_Implementation(UMarkovJuniorInterpreter* InInterpreter,UMarkovJuniorGrid* InGrid,const FMarkovJuniorSymmetry& ParentSymmetry)
+{
+	Super::Initialize_Implementation(InInterpreter, InGrid, ParentSymmetry);
+	// initial the symmetry rule
+	FMarkovJuniorSymmetry Symmetry(InGrid->GetResolution().Z != 1,SymmetryType);
+	Symmetry |= ParentSymmetry;
+	for (auto& Rule : Rules)
+	{
+		Rule.Construct(Grid);
+	}
+	TArray<FMarkovJuniorRule> TempRules = Rules;
+	Rules.Empty();
+	for (auto& Rule : TempRules)
+	{
+		TArray<FMarkovJuniorRule> SymmetryRules;
+		Symmetry.GetSymmetries<FMarkovJuniorRule>(Rule,
+			ZRotate,
+			Reflect,
+			YRotate,
+			SymmetryRules);
+		for (auto& SymmetryRule : SymmetryRules)
+		{
+			Rules.Add(SymmetryRule);
+		}
+	}
+	// initial mask 
 	MatchMask.SetNum(Rules.Num());
 	for (auto& Mask : MatchMask)
 	{
 		Mask.Init(false,Grid->Size());
-	}
-	for (auto& Rule : Rules)
-	{
-		Rule.Construct(Grid);
 	}
 	return true;
 }
@@ -50,18 +81,21 @@ bool UMarkovJuniorRuleNode::Go_Implementation()
 
 	if (LastMatchedTurn >= 0)
 	{
+		const auto& Changes = Interpreter->Changes;
 		for (int32 Index = Interpreter->Firsts[LastMatchedTurn]; Index < Interpreter->Changes.Num(); ++Index)
 		{
-			auto Change = Interpreter->Changes[Index];
+			auto& Change = Changes[Index];
 			auto Value = Grid->GetState(Change);
 			for (int32 RuleIndex = 0; RuleIndex < Rules.Num(); ++RuleIndex)
 			{
-				FMarkovJuniorRule& Rule = Rules[RuleIndex];
-				auto RuleMask = MatchMask[RuleIndex];
-				auto Shifts = Rule.InputShifts[Value];
+				const FMarkovJuniorRule& Rule = Rules[RuleIndex];
+				const auto& RuleMask = MatchMask[RuleIndex];
+				const auto& Shifts = Rule.InputShifts[Value];
 				for (auto& Shift : Shifts)
+				// for (int32 ShiftIndex = 0;ShiftIndex < Shifts.Num();++ShiftIndex)
 				{
-					auto Delta = Change - Shift;
+					// todo: 减法优化
+					const auto& Delta = Change - Shift;
 					// check
 					if (Delta.X < 0 || Delta.Y < 0 || Delta.Z < 0 ||
 						Delta.X + Rule.Size.X > GridSize.X ||
@@ -92,10 +126,10 @@ bool UMarkovJuniorRuleNode::Go_Implementation()
 					for (int32 XIndex = Rule.Size.X - 1; XIndex < GridSize.X; XIndex += Rule.Size.X)
 					{
 						auto Position = FIntVector(XIndex, YIndex, ZIndex);
-						auto Shifts = Rule.InputShifts[Grid->GetState(Position)];
+						const auto& Shifts = Rule.InputShifts[Grid->GetState(Position)];
 						for (auto& Shift : Shifts)
 						{
-							auto Delta = Position - Shift;
+							const auto& Delta = Position - Shift;
 							// check
 							if (Delta.X < 0 || Delta.Y < 0 || Delta.Z < 0 ||
 								Delta.X + Rule.Size.X > GridSize.X ||
@@ -137,7 +171,7 @@ void UMarkovJuniorRuleNode::Add(int32 RuleIndex, const FIntVector& Position)
 	}
 	++MatchCount;
 }
-
+#if WITH_EDITOR
 void UMarkovJuniorRuleNode::PostModelEdited(const TArray<FMarkovJuniorValue>& Values)
 {
 	for (auto& Rule : Rules)
@@ -145,3 +179,4 @@ void UMarkovJuniorRuleNode::PostModelEdited(const TArray<FMarkovJuniorValue>& Va
 		Rule.PostModelEdited(Values);
 	}
 }
+#endif

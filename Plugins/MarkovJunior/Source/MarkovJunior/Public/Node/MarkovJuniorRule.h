@@ -58,12 +58,17 @@ struct FMarkovJuniorRule
 
 public:
 #if WITH_EDITOR
-	virtual void PostModelEdited(const TArray<FMarkovJuniorValue>& Values);
+	void PostModelEdited(const TArray<FMarkovJuniorValue>& Values);
 #endif
 private:
 	UPROPERTY(EditAnywhere)
 	FInOutMatrix2 InOutMatrix;
 };
+
+inline uint32 GetTypeHash(const FMarkovJuniorRule& Rule)
+{
+	return GetTypeHash(Rule.InputValueWaves) ^ GetTypeHash(Rule.OutputValueIndices) ^ GetTypeHash(Rule.Size);
+}
 
 USTRUCT(BlueprintType)
 struct FMarkovJuniorField

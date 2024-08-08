@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "MarkovJuniorGrid.h"
+#include "MarkovJuniorRule.h"
+#include "MarkovJuniorSymmetry.h"
 #include "UObject/Object.h"
 #include "MarkovJuniorNode.generated.h"
 
@@ -34,8 +36,8 @@ public:
 	 * @param InGrid the grid that this node works with
 	 * @return whether the initialization is successful
 	 */
-	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category = "MarkovJunior|Node")
-	bool Initialize(UMarkovJuniorInterpreter* InInterpreter,UMarkovJuniorGrid* InGrid);
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category = "MarkovJunior|Node",meta=(HidePin="ParentSymmetry"))
+	bool Initialize(UMarkovJuniorInterpreter* InInterpreter,UMarkovJuniorGrid* InGrid,const FMarkovJuniorSymmetry& ParentSymmetry);
 
 #if WITH_EDITOR
 	virtual void PostModelEdited(const TArray<FMarkovJuniorValue>& Values);
@@ -57,7 +59,7 @@ protected:
 	 * @param InGrid the grid that this node works with
 	 * @return whether the initialization is successful
 	 */
-	virtual bool Initialize_Implementation(UMarkovJuniorInterpreter* InInterpreter,UMarkovJuniorGrid* InGrid);
+	virtual bool Initialize_Implementation(UMarkovJuniorInterpreter* InInterpreter,UMarkovJuniorGrid* InGrid,const FMarkovJuniorSymmetry& ParentSymmetry);
 protected:
 	/**
 	 * The grid that this node works with
@@ -69,4 +71,7 @@ protected:
 	 */
 	UPROPERTY(BlueprintReadOnly, Category = "MarkovJunior|Node")
 	TObjectPtr<UMarkovJuniorInterpreter> Interpreter;
+protected:
+	UPROPERTY(EditAnywhere)
+	ESymmetryType SymmetryType = ESymmetryType::All;
 };

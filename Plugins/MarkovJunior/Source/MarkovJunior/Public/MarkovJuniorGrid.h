@@ -66,7 +66,10 @@ public:
 
 	FORCEINLINE FIntVector GetResolution() const { return Resolution; }
 
-	int32 GetState(const FIntVector& Position) const;
+	FORCEINLINE int32 GetState(const FIntVector& Position) const
+	{
+		return State[Position.X + Position.Y * Resolution.X + Position.Z * Resolution.X * Resolution.Y];
+	}
 
 	void SetState(const FIntVector& Position, int32 Value);
 

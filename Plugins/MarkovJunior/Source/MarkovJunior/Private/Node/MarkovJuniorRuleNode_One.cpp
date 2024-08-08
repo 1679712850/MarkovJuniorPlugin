@@ -23,7 +23,8 @@ bool UMarkovJuniorRuleNode_One::Go_Implementation()
 	}
 
 
-	TPair<FIntVector,int32> Match = RandomMatch();
+	TPair<FIntVector,int32> Match;
+	RandomMatch(Match);
 	if (Match.Value < 0)
 	{
 		return false;
@@ -35,19 +36,19 @@ bool UMarkovJuniorRuleNode_One::Go_Implementation()
 		Counter++;
 		return true;
 	}
-	{
-		// todo:this code if for AllNode
-		// TArray<int32> Shuffle;
-		// Shuffle.SetNum(MatchCount);
-		// for (int32 Index = 0; Index < MatchCount; ++Index)
-		// {
-		// 	Shuffle[Index] = Index;
-		// }
-		// Algo::RandomShuffle(Shuffle);
-		// FMath::SRandInit()
-		
-	}
-	return true;
+	// {
+	// 	// todo:this code if for AllNode
+	// 	// TArray<int32> Shuffle;
+	// 	// Shuffle.SetNum(MatchCount);
+	// 	// for (int32 Index = 0; Index < MatchCount; ++Index)
+	// 	// {
+	// 	// 	Shuffle[Index] = Index;
+	// 	// }
+	// 	// Algo::RandomShuffle(Shuffle);
+	// 	// FMath::SRandInit()
+	// 	
+	// }
+	// return true;
 }
 
 void UMarkovJuniorRuleNode_One::Reset_Implementation()
@@ -60,7 +61,7 @@ void UMarkovJuniorRuleNode_One::Reset_Implementation()
 	}
 }
 
-TPair<FIntVector, int32> UMarkovJuniorRuleNode_One::RandomMatch()
+void UMarkovJuniorRuleNode_One::RandomMatch(TPair<FIntVector, int32>& ResultMatch)
 {
 	// todo:potentials
 	{
@@ -68,7 +69,7 @@ TPair<FIntVector, int32> UMarkovJuniorRuleNode_One::RandomMatch()
 		{
 			const int32 MatchIndex = Interpreter->RandomStream.RandRange(0,MatchCount - 1);
 
-			const TPair<FIntVector,int32> Match = AllMatches[MatchIndex];
+			const TPair<FIntVector,int32>& Match = AllMatches[MatchIndex];
 			const auto Index = UMarkovJuniorFunctionLibrary::PositionAsIndex(Match.Key,Grid->GetResolution());
 
 			MatchMask[Match.Value][Index] = false;
@@ -76,10 +77,11 @@ TPair<FIntVector, int32> UMarkovJuniorRuleNode_One::RandomMatch()
 
 			if (Grid->MatchRule(Rules[Match.Value],Match.Key))
 			{
-				return Match;
+				ResultMatch = Match;
+				return;
 			}
 		}
-		return {FIntVector(-1),-1};
+		ResultMatch = {FIntVector(-1),-1};
 	}
 }
 
@@ -94,19 +96,21 @@ void UMarkovJuniorRuleNode_One::Apply(const FMarkovJuniorRule& Rule, const FIntV
 		{
 			for (int XIndex = 0; XIndex < Rule.Size.X; ++XIndex)
 			{
-				FIntVector NewPosition(XIndex,YIndex,ZIndex);
+				FIntVector ValuePosition(XIndex,YIndex,ZIndex);
 				
-				auto NewValue = Rule.OutputValueIndices[UMarkovJuniorFunctionLibrary::PositionAsIndex(NewPosition,Rule.Size)];
+				auto NewValue = Rule.OutputValueIndices[UMarkovJuniorFunctionLibrary::PositionAsIndex(ValuePosition,Rule.Size)];
 				
 				if (NewValue != -1)
 				{
-					auto OldPosition = Position + NewPosition;
+					// auto OldPosition = Position + NewPosition;
+					// old position
+					ValuePosition += Position;
 
-					auto OldValue = Grid->GetState(OldPosition);
+					auto OldValue = Grid->GetState(ValuePosition);
 					if (OldValue != NewValue)
 					{
-						Grid->SetState(OldPosition,NewValue);
-						Changes.Add(OldPosition);
+						Grid->SetState(ValuePosition,NewValue);
+						Changes.Add(ValuePosition);
 					}
 				}
 			}
