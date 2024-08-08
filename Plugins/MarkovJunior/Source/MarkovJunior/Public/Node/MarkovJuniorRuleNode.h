@@ -54,7 +54,7 @@ protected:
 	/**
 	 * the masks of each rule with each state
 	 */
-	TArray<TBitArray<>> MatchMask;
+	TArray<TArray<bool>> MatchMask;
 	
 	/**
 	 * the potential value of each MarkovJuniorValue with each state

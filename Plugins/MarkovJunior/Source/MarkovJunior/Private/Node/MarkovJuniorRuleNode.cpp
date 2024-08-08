@@ -40,10 +40,7 @@ bool UMarkovJuniorRuleNode::Initialize_Implementation(UMarkovJuniorInterpreter* 
 			Reflect,
 			YRotate,
 			SymmetryRules);
-		for (auto& SymmetryRule : SymmetryRules)
-		{
-			Rules.Add(SymmetryRule);
-		}
+		Rules.Append(SymmetryRules);
 	}
 	// initial mask 
 	MatchMask.SetNum(Rules.Num());
@@ -95,6 +92,7 @@ bool UMarkovJuniorRuleNode::Go_Implementation()
 				// for (int32 ShiftIndex = 0;ShiftIndex < Shifts.Num();++ShiftIndex)
 				{
 					// todo: 减法优化
+					// const auto& Delta = Change - Shifts[ShiftIndex];
 					const auto& Delta = Change - Shift;
 					// check
 					if (Delta.X < 0 || Delta.Y < 0 || Delta.Z < 0 ||
@@ -128,7 +126,9 @@ bool UMarkovJuniorRuleNode::Go_Implementation()
 						auto Position = FIntVector(XIndex, YIndex, ZIndex);
 						const auto& Shifts = Rule.InputShifts[Grid->GetState(Position)];
 						for (auto& Shift : Shifts)
+						// for (int32 ShiftIndex = 0;ShiftIndex < Shifts.Num();++ShiftIndex)
 						{
+							// const auto& Delta = Position - Shifts[ShiftIndex];
 							const auto& Delta = Position - Shift;
 							// check
 							if (Delta.X < 0 || Delta.Y < 0 || Delta.Z < 0 ||
